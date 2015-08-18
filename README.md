@@ -87,7 +87,7 @@ sudo aptitude install postgresql-contrib
 ```
  - 以postgres身份在目标数据库（此处为acd）中执行脚本：
 ```
-psql -f audit.sql
+psql -f audit.sql acd
 ```
  - 对指定数据表启用审计：
 ```
