@@ -235,6 +235,5 @@ SELECT * FROM tree INNER JOIN dir_tree USING (node_id) ORDER BY node_id ASC;
 目前只是一味进行重试，对非网络原因造成的失败没有进行处理。
 
 # 待完成
-将配置参数从代码中分离。
-
-添加数据查询的用户界面。
+ - 将配置参数从代码中分离。
+ - 添加数据查询的用户界面。
