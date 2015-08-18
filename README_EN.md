@@ -2,21 +2,21 @@
 Amazon Cloud Drive (ACD) is a personal network drive service from Amazon. The scripts in this project wrap around some softwares under shell for easy big folder uploading.
 
 # Features
- - Do volume compression, encryption, testing, adding recovery files and upload automatically to a given folder, then save the directory structure, password and other info to PostgreSQL database.
+ - Do volume compression, encryption, testing, adding recovery files and uploading automatically to a given folder, then save the directory structure, password and other info to PostgreSQL database.
  - Send email notifications for errors and completion.
- - Optional auto or manual step selection for interruption recovery.
+ - Optional auto or manual step selections for interruption recovery.
 
 # Files
-    Name    |  Language  |   Function
+    Name    |  Language  |   Functions
 ----------- | ---------- | ------------
 packer.sh   | GNU Bash   | Main program
 savetree.py | Python 3   | Convert xml directory tree to adjacency list
-db-init.sql | PostgreSQL | Create indexing database
+db-init.sql | PostgreSQL | Create database
 
-# Dependencis
+# Dependencies
 Apart from GNU Core Utils, we need：
 
-   Software    |   Purpose
+   Softwares   |   Purposes
 -------------- | ------------
 tree           | Extract directory tree
 p7zip          | Compression and encryption
@@ -234,5 +234,5 @@ Reading only the "status" field from database makes it impossible to check for d
 It's only endless retries now. Should account for errors other than network.
 
 # TODO
-Separate configurations from the code.
-Implement a user interface for database look ups.
+ - Separate configurations from the code.
+ - Implement a user interface for database look ups.
