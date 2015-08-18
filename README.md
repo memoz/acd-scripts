@@ -1,6 +1,6 @@
 # acd-scripts
 Amazon Cloud Drive (ACD) 是 Amazon 提供的一项个人网络硬盘服务。本项目将一些Shell下的软件结合起来，自动对大体积文件夹打包上传。
-English README to be written.
+Looking for [English README](README_EN.md)?
 
 # 整体功能
 - 对单个文件夹自动完成分卷压缩、加密、测试、添加修复文件和上传，并保存目录结构和密码等到PostgreSQL数据库。
@@ -236,3 +236,4 @@ SELECT * FROM tree INNER JOIN dir_tree USING (node_id) ORDER BY node_id ASC;
 
 # 待完成
 将配置参数从代码中分离。
+添加数据查询的用户界面。
