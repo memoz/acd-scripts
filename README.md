@@ -80,24 +80,20 @@ hostssl    all             all             ::1/128              cert    clientce
 #### 启用审计（可选）
 此功能可记录SQL操作，详细信息[见此](https://wiki.postgresql.org/wiki/Audit_trigger_91plus)，使用步骤为：
 
-1. 下载audit.sql。目前原项目存在[未修复的问题](https://github.com/2ndQuadrant/audit-trigger/issues/14)，可使用此[临时修复](https://github.com/memoz/audit-trigger/blob/master/audit.sql)。
-
-2. 此功能需要hstore数据类型，安装PostgreSQL附加模块：
+ - 下载audit.sql。目前原项目存在[未修复的问题](https://github.com/2ndQuadrant/audit-trigger/issues/14)，可使用此[临时修复](https://github.com/memoz/audit-trigger/blob/master/audit.sql)。
+ - 此功能需要hstore数据类型，安装PostgreSQL附加模块：
 ```
 sudo aptitude install postgresql-contrib
 ```
-
-3. 以postgres身份在目标数据库（此处为acd）中执行脚本：
+ - 以postgres身份在目标数据库（此处为acd）中执行脚本：
 ```
 psql -f audit.sql
 ```
-
-4. 对指定数据表启用审计：
+ - 对指定数据表启用审计：
 ```
 SELECT audit.audit_table('数据表名');
 ```
-
-5. 查询记录：
+ - 查询记录：
 ```
 SELECT * FROM audit.logged_actions;
 ```
@@ -239,4 +235,4 @@ SELECT * FROM tree INNER JOIN dir_tree USING (node_id) ORDER BY node_id ASC;
 目前只是一味进行重试，对非网络原因造成的失败没有进行处理。
 
 # 待完成
-将配置参数从代码中分离
+将配置参数从代码中分离。
