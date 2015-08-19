@@ -2,7 +2,7 @@
 Amazon Cloud Drive (ACD) is a personal network drive service from Amazon. The scripts in this project wrap around some softwares under shell for easy big folder uploading.
 
 # Features
- - Do volume compression, encryption, testing, adding recovery files and uploading automatically to a given folder, then save the directory structure, password and other info to PostgreSQL database.
+ - Do volume compression, encryption, testing, adding recovery files and uploading automatically to a given folder, and save the directory structure, password and other info to PostgreSQL database.
  - Send email notifications for errors and completion.
  - Optional auto or manual step selections for interruption recovery.
 
@@ -28,10 +28,10 @@ acd_cli        | Uplaod to ACD
 [acd_cli](https://github.com/yadayada/acd_cli) is another Github project, others are free softwares。
 
 # Usage
-I'm using Debian Jessie. Use your distribution's package manager where appropriate. Configuration files may reside elsewhere.
+I'm on Debian Jessie. Use your distribution's package manager where appropriate. Configuration files may reside elsewhere.
 ## First use
 ### Generate self-signed digital certificates
-To replace password authentication.
+To replace database password authentication.
 #### Root Certification Authority
 ```
 openssl genrsa -out rootCA.key 2048
@@ -103,13 +103,14 @@ SELECT * FROM audit.logged_actions;
 sudo aptitude install tree p7zip-full par2 mailx xmlstarlet postgresql-client python3 python3-lxml python3-pip
 sudo pip3 install --upgrade git+https://github.com/yadayada/acd_cli.git
 ```
-#### Place certificates
+#### Place client certificates
 ```
 /etc/postgresql-common/postgresql.crt
 /etc/postgresql-common/postgresql.key
 /etc/postgresql-common/root.pem
 ```
-#### Set up connection service file
+#### Set up client connection service file
+So we can simply pass a "name" to psql.
 ```
 /etc/postgresql-common/pg_service.conf
 [dsn1]
@@ -127,23 +128,23 @@ sslrootcert=/etc/postgresql-common/root.pem
 #### Set up SSH tunnel (optional)
 If the scripts run on a different machine(client) from the database server(server), we have the options of direct connection, VPN, SSH tunnels and more. Here's how to set up SSH tunnels.
 ##### Direct tunnel
-From client end
+From client's end
 ```
 ssh -N -L 5432:127.0.0.1:5432 user@server
 ```
 
-From server end
+From server's end
 ```
 ssh -N -R 5432:127.0.0.1:5432 user@client
 ```
 
 ##### Passing through a third machine
-From client end
+From client's end
 ```
 ssh -N -o "ProxyCommand ssh -W %h:%p user@thirdhost" -L 5432:127.0.0.1:5432 user@server
 ```
 
-From server end
+From server's end
 ```
 ssh -N -o "ProxyCommand ssh -W %h:%p user@thirdhost" -R 5432:127.0.0.1:5432 user@client
 ```
@@ -166,20 +167,20 @@ Modify send_email function at the beginning of packer.sh to set subject, SMTP se
 Default setting is hours=8 ie. UTC+8. Change it accordingly.
 
 ## Subsequent usage
-Save packer.sh and savetree.py in a convenient place outside the target directory such as home directory. Make sure the home partition has enough free space for the archive and recovery files.
+Save packer.sh and savetree.py in a convenient place outside the target directory, such as home directory. Make sure the home partition has enough free space for the archive and recovery files.
 ### Normal uploading
 ```
 packer.sh directory_name
 ```
 
-### Start from certain step
+### Start from a certain step
 There are 4 steps: pack, test, par2 and upload.
 ```
 packer.sh directory_name continue-from-test
 ```
 
-### Auto check for start step
-This function reads the "status" field from the database. So it's rather weak. See known issues.
+### Auto check for start steps
+This function reads the "status" field from the database, so it's rather weak. See known issues.
 ```
 packer.sh directory_name auto-recover
 ```
@@ -191,7 +192,7 @@ packer.sh directory_name skip-db-check
 packer.sh directory_name auto-recover skip-db-check
 ```
 
-### Looking up the database
+### Querying the database
 This should be a separate feature, but we'll use psql for now. 
 #### Archive list
 ```
@@ -229,7 +230,7 @@ SELECT * FROM tree INNER JOIN dir_tree USING (node_id) ORDER BY node_id ASC;
 
 # Known issues
 ## Weak auto step check
-Reading only the "status" field from database makes it impossible to check for database access failures, user interruptions, programm errors, insufficient disk space, hardware failures and so on, so don't rely on it.
+Reading only the "status" field from database makes it impossible to check for database access failures, user interruptions, programming errors, insufficient disk space, hardware failures and so on, so don't rely on it.
 ## Not checking why database access failed
 It's only endless retries now. Should account for errors other than network.
 
