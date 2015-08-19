@@ -79,7 +79,7 @@ hostssl    all             all             ::1/128              cert    clientce
 #### Enable auditing (optional)
 This feature keeps a log of certain SQL transactions. See [here](https://wiki.postgresql.org/wiki/Audit_trigger_91plus) for details. To use it:
 
- - Download audit.sql. This project has [an open issue](https://github.com/2ndQuadrant/audit-trigger/issues/14). A [temporary fix](https://github.com/memoz/audit-trigger/blob/master/audit.sql) is available.
+ - Download [audit.sql](https://raw.githubusercontent.com/2ndQuadrant/audit-trigger/master/audit.sql).
  - This feature requires hstore data type. Install additional PostgreSQL modules:
 ```
 sudo aptitude install postgresql-contrib
