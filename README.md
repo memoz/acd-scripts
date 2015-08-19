@@ -80,7 +80,7 @@ hostssl    all             all             ::1/128              cert    clientce
 #### 启用审计（可选）
 此功能可记录SQL操作，详细信息[见此](https://wiki.postgresql.org/wiki/Audit_trigger_91plus)，使用步骤为：
 
- - 下载audit.sql。目前原项目存在[未修复的问题](https://github.com/2ndQuadrant/audit-trigger/issues/14)，可使用此[临时修复](https://github.com/memoz/audit-trigger/blob/master/audit.sql)。
+ - 下载[audit.sql](https://raw.githubusercontent.com/2ndQuadrant/audit-trigger/master/audit.sql)。
  - 此功能需要hstore数据类型，安装PostgreSQL附加模块：
 ```
 sudo aptitude install postgresql-contrib
