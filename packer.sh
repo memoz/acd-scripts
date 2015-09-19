@@ -1,17 +1,17 @@
 #!/bin/bash
 #
 # Copyright (C) 2015  Bowen Jiang  (unctas@gmail.com)
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -20,11 +20,11 @@
 # Send notification emails
 function send_email {
     echo "$1" | mailx \
-    -s "Subject" \
+    -s "subject" \
     -S smtp="smtp.gmail.com:587" \
     -S smtp-use-starttls \
     -S smtp-auth=login \
-    -S smtp-auth-user="user" \
+    -S smtp-auth-user="user@example.com" \
     -S smtp-auth-password="password" \
     -S ssl-verify=ignore \
     user@example.com
@@ -60,9 +60,9 @@ function db_query {
             printf "\rDB query failed. Retrying in %02d..." "$secs"
             sleep 1
         done
+        printf "\n"
         if [[ $((++n)) -eq 10 ]]; then
-            send_email "General DB query failed after 10 tries. Still trying..."
-            n=0
+            send_email "General DB query failure after 10 tries. Still trying..."
         fi
     done
 }
@@ -192,13 +192,13 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
     # Save directory structure
     tree --du -saX "${bash_args[0]}" > ~/xml_trees/$arc_no.xml
     check_exit_code $? "tree" "保存目录结构失败！"
-    read act_size dirs files <<< $(xmlstarlet sel -t -v /tree/report/size -n -v /tree/report/directories -n -v /tree/report/files -n ~/xml_trees/$arc_no.xml)
-    check_exit_code $? "read" "读取xml失败！"
+    s_d_f=($(xmlstarlet sel -t -v /tree/report/size -o ' ' -v /tree/report/directories -o ' ' -v /tree/report/files ~/xml_trees/$arc_no.xml))
+    check_exit_code $? "xmlstarlet" "读取xml失败！"
 
     # 存入数据库
     # Create new records in the database
     if [ $record_exist -eq 0 ]; then
-        db_query "initial INSERT" "INSERT INTO summary (arc_no, act_size, dirs, files, status, password, descr) VALUES ('$arc_no', '$act_size', '$dirs', '$files', 'packing', '$a_pwd', '${bash_args[0]}')"
+        db_query "initial INSERT" "INSERT INTO summary (arc_no, act_size, dirs, files, status, password, descr) VALUES ('$arc_no', '${s_d_f[0]}', '${s_d_f[1]}', '${s_d_f[2]}', 'packing', '$a_pwd', '${bash_args[0]}')"
     fi
     c_dir="$(pwd)"
     if [ $tree_saved -eq 0 ]; then
@@ -298,9 +298,9 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-par2" ]; th
 
     # 生成par2
     # Generate par2
-    par2 c -s4096000 -r5 -l $arc_no.7z *
+    par2 c -s16777216 -r5 -l $arc_no.7z *
     check_exit_code $? "par2" "生成修复文件失败！"
-    
+
     # 设置步骤标志
     # Set flag
     ((prior_steps++))
@@ -325,9 +325,16 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-upload" ]; 
     # 上传至ACD
     # Upload to ACD
     cd ~
-    acdcli sync && acdcli ul $arc_no /Archives
-    acdcli sync && acdcli ul $arc_no /Archives
-    check_exit_code $? "acdcli" "上传失败！"
+    failures=0
+    until acdcli sync && acdcli ul -x3 $arc_no /Archives; do
+        for secs in $(seq 89 -1 0); do
+             printf "\rUploading failed. Retrying in %02d..." "$secs"
+            sleep 1
+        done
+        if [ $((++failures)) -eq 5 ]; then
+            send_email "Uploading failed for 5 times. Still retrying..."
+        fi
+    done
 
     # 删除压缩包
     # Delete local archives
