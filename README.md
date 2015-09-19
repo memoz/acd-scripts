@@ -213,9 +213,9 @@ WITH RECURSIVE tree AS (
   FROM dir_tree JOIN tree ON (dir_tree.parent_id = tree.node_id)
 )
 SELECT node_id, array_to_string(item_array, '->') FROM tree ORDER BY item_array;
-
+```
 或者
-
+```
 WITH RECURSIVE tree AS (
   SELECT node_id, ARRAY[]::BIGINT[] AS ancestors FROM dir_tree WHERE name = '存档编号'
 
