@@ -107,8 +107,8 @@ prior_steps=0
 record=()
 tree_saved=0
 record_exist=0
-q1="SELECT arc_no, password, status FROM summary WHERE arc_no = (SELECT name FROM dir_tree WHERE node_id = (SELECT parent_id FROM dir_tree WHERE name = '${bash_args[0]}'))::BIGINT"
-q2="SELECT arc_no, password, status FROM summary WHERE descr = '${bash_args[0]}'"
+q1="SELECT arc_no, password, status FROM summary WHERE arc_no = (SELECT name FROM dir_tree WHERE node_id = (SELECT parent_id FROM dir_tree WHERE name = '${bash_args[0]//\'/\'\'}'))::BIGINT"
+q2="SELECT arc_no, password, status FROM summary WHERE descr = '${bash_args[0]//\'/\'\'}'"
 
 # 检查数据库是否可用
 # Check database connection
@@ -198,7 +198,7 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
     # 存入数据库
     # Create new records in the database
     if [ $record_exist -eq 0 ]; then
-        db_query "initial INSERT" "INSERT INTO summary (arc_no, act_size, dirs, files, status, password, descr) VALUES ('$arc_no', '${s_d_f[0]}', '${s_d_f[1]}', '${s_d_f[2]}', 'packing', '$a_pwd', '${bash_args[0]}')"
+        db_query "initial INSERT" "INSERT INTO summary (arc_no, act_size, dirs, files, status, password, descr) VALUES ('$arc_no', '${s_d_f[0]}', '${s_d_f[1]}', '${s_d_f[2]}', 'packing', '$a_pwd', '${bash_args[0]//\'/\'\'}')"
     fi
     c_dir="$(pwd)"
     if [ $tree_saved -eq 0 ]; then
