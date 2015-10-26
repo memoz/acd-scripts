@@ -79,23 +79,27 @@ hostssl    all             all             ::1/128              cert    clientce
 #### Enable auditing (optional)
 This feature keeps a log of certain SQL transactions. See [here](https://wiki.postgresql.org/wiki/Audit_trigger_91plus) for details. To use it:
 
- - Download [audit.sql](https://raw.githubusercontent.com/2ndQuadrant/audit-trigger/master/audit.sql).
- - This feature requires hstore data type. Install additional PostgreSQL modules:
-```
-sudo aptitude install postgresql-contrib
-```
- - Execute the script as user postgres on the target database acd:
-```
-psql -f audit.sql acd
-```
- - Enable auditing for a table:
-```
-SELECT audit.audit_table('table name');
-```
- - Read the logs:
-```
-SELECT * FROM audit.logged_actions;
-```
+1. Download [audit.sql](https://raw.githubusercontent.com/2ndQuadrant/audit-trigger/master/audit.sql).
+2. This feature requires hstore data type. Install additional PostgreSQL modules:
+
+   ```
+   sudo aptitude install postgresql-contrib
+   ```
+3. Execute the script as user postgres on the target database acd:
+
+   ```
+   psql -f audit.sql acd
+   ```
+4. Enable auditing for a table:
+
+   ```
+   SELECT audit.audit_table('table name');
+   ```
+5. Read the logs:
+
+   ```
+   SELECT * FROM audit.logged_actions;
+   ```
 
 ### Set up scripts' environment
 #### Install required softwares
@@ -150,24 +154,26 @@ ssh -N -o "ProxyCommand ssh -W %h:%p user@thirdhost" -R 5432:127.0.0.1:5432 user
 ```
 
 ##### Auto reconnect
- - Use autossh: -f fall into background; -M autossh monitor port; -N do not execute remote commands, tunnel only; environment variable AUTOSSH_POLL, monitor packet sending interval in seconds.
+1. Use autossh: -f fall into background; -M autossh monitor port; -N do not execute remote commands, tunnel only; environment variable AUTOSSH_POLL, monitor packet sending interval in seconds.
 
-```
-AUTOSSH_POLL=30 autossh -M 12340 -f -N -o "ProxyCommand ssh -W %h:%p user@thirdhost" -L 5432:127.0.0.1:5432 user@server
-```
+   ```
+   AUTOSSH_POLL=30 autossh -M 12340 -f -N -o "ProxyCommand ssh -W %h:%p user@thirdhost" -L 5432:127.0.0.1:5432 user@server
+   ```
 
- - Set ssh options ClientAliveInterval and ClientAliveCountMax on the server.
+2. Set ssh options ClientAliveInterval and ClientAliveCountMax on the server.
 
- - Set ssh options ServerAliveInterval and ServerAliveCountMax on the client.
+3. Set ssh options ServerAliveInterval and ServerAliveCountMax on the client.
 
 ### Change script parameters
 #### Email
-Modify send_email function at the beginning of packer.sh to set subject, SMTP server and recepient.
+Modify send_email.sh to set subject, SMTP server and recepient.
 #### savetree.py timezone
 Default setting is hours=8 ie. UTC+8. Change it accordingly.
+#### Specify working directory
+Change work_path="~" at line 103 of packer.sh. No trailing slash needed.
 
 ## Subsequent usage
-Save packer.sh and savetree.py in a convenient place outside the target directory, such as home directory. Make sure the home partition has enough free space for the archive and recovery files.
+Save all sh files and savetree.py in a convenient place outside the target directory, such as home directory. Make sure the working directory's partition has enough free space for the archive and recovery files.
 ### Normal uploading
 ```
 packer.sh directory_name
