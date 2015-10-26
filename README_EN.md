@@ -170,7 +170,7 @@ Modify send_email.sh to set subject, SMTP server and recepient.
 #### savetree.py timezone
 Default setting is hours=8 ie. UTC+8. Change it accordingly.
 #### Specify working directory
-Change work_path="~" at line 103 of packer.sh. No trailing slash needed.
+Change work_path="$HOME" at line 103 of packer.sh. No trailing slash needed.
 
 ## Subsequent usage
 Save all sh files and savetree.py in a convenient place outside the target directory, such as home directory. Make sure the working directory's partition has enough free space for the archive and recovery files.
