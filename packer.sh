@@ -100,7 +100,7 @@ tree_saved=0
 record_exist=0
 q1="SELECT arc_no, password, status FROM summary WHERE arc_no = (SELECT name FROM dir_tree WHERE node_id = (SELECT parent_id FROM dir_tree WHERE name = '${bash_args[0]//\'/\'\'}'))::BIGINT"
 q2="SELECT arc_no, password, status FROM summary WHERE descr = '${bash_args[0]//\'/\'\'}'"
-work_path="~"
+work_path="$HOME"
 
 # 检查数据库是否可用
 # Check database connection
@@ -333,7 +333,7 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-upload" ]; 
 
     # 删除压缩包
     # Delete local archives
-    rm -rf "$arc_no"
+    rm -rf "$work_path/$arc_no"
     check_exit_code $? "rm" "删除文件失败！"
 
     # 更新数据库
