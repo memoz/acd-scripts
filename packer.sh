@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright (C) 2015  Bowen Jiang  (unctas@gmail.com)
 #
@@ -15,65 +15,67 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-# 发送通知邮件
-# Send notification emails
-function send_email {
-    echo "$1" | mailx \
-    -s "subject" \
-    -S smtp="smtp.gmail.com:587" \
-    -S smtp-use-starttls \
-    -S smtp-auth=login \
-    -S smtp-auth-user="user@example.com" \
-    -S smtp-auth-password="password" \
-    -S ssl-verify=ignore \
-    user@example.com
+function echo_usage {
+    echo "Usage: ${BASH_SOURCE[0]}  (<A directory name>)  [skip-db-check | auto-recover | continue-from-pack |"
+    echo "                     continue-from-test | continue-from-par2 | continue-from-upload]  [skip-db-check]"
 }
 
-# 错误处理
-# Error handling
-function check_exit_code {
-    if [[ $1 -ne 0 ]]; then
-        echo $2" command FAILED with exit code: "$1
-		if [[ -n $3 ]]; then
-		    send_email "$3"
-		fi
+# 检查输入参数 1
+# Check input argument 1
+if [ -z "$1" ]; then
+    echo "A directory name is required!"
+    echo_usage
+    exit 1
+elif [ -d "$1" ]; then
+    if [ -L "$1" ]; then
+        echo "Symlinks are not supported!"
+        echo_usage
         exit 1
     fi
-}
+else
+    echo "'$1' is not a directory or does not exist!"
+    echo_usage
+    exit 1
+fi
 
-# 数据库查询
-# Database access
-function db_query {
-    n=0; i=0; IFS=$'\n'
-    start=$(date --rfc-3339=seconds)
-    printf "Start executing %s query at %s.\n" "$1" "$start"
-    while true; do
-        record=($(psql -Aqt -F$'\n' -c "$2" -d 'service=dsn1'))
-        if [ $? -eq 0 ]; then
-            finish=$(date --rfc-3339=seconds)
-            printf "DB query finished at %s.\n" "$finish"
-            IFS=$' \t\n'
-            break
-        fi
-        for secs in $(seq 59 -1 0); do
-            printf "\rDB query failed. Retrying in %02d..." "$secs"
-            sleep 1
-        done
-        printf "\n"
-        if [[ $((++n)) -eq 10 ]]; then
-            send_email "General DB query failure after 10 tries. Still trying..."
-        fi
-    done
-}
+# 检查输入参数 2
+# Check input argument 2
+if [ -n "$2" ] && [ "$2" != "skip-db-check" ] && [ "$2" != "auto-recover" ] && [ "$2" != "continue-from-pack" ] && \
+   [ "$2" != "continue-from-test" ] && [ "$2" != "continue-from-par2" ] && [ "$2" != "continue-from-upload" ]; then
+    echo "Argument 2 not understood!"
+    echo_usage
+    exit 1
+fi
 
-# 响应Unix信号
-# Respond to Unix signals
-function clean_up {
-	printf "\nSignal caught, abort.\n"
-	exit 1
-}
-trap clean_up SIGHUP SIGINT SIGTERM
+# 检查输入参数 3
+# Check input argument 3
+if [ -n "$3" ] && [ "$3" != "skip-db-check" ]; then
+    echo "Argument 3 not understood!"
+    echo_usage
+    exit 1
+fi
+
+# 复制输入参数
+# Copy input arguments
+bash_args=("$@")
+
+# 删除目录名中的正斜杠
+# Remove forward slashes in the directory name
+bash_args[0]="${bash_args[0]%/}"
+
+# 获取脚本路径
+# Obtain script location
+packer_path="${BASH_SOURCE%/*}"
+if [[ ! -d "$packer_path" ]];
+    then packer_path="$PWD";
+fi
+
+# 加载外部函数
+# Load external functions
+. "$packer_path/send_email.sh"
+. "$packer_path/check_exit_code.sh"
+. "$packer_path/db_query.sh"
+. "$packer_path/clean_up.sh"
 
 # 检查某些软件是否可用
 # Check availability of some softwares
@@ -90,17 +92,6 @@ check_exit_code $? "Check xmlstarlet"
 command -v psql
 check_exit_code $? "Check psql"
 
-# 检查输入参数
-# Check input arguments
-if [ -z "$1" ]; then
-    echo "A target directory is required."
-	exit 1
-fi
-
-# 转存输入参数
-# Copy input arguments
-bash_args=("$@")
-
 # 定义全局变量
 # Define global variables
 prior_steps=0
@@ -109,6 +100,7 @@ tree_saved=0
 record_exist=0
 q1="SELECT arc_no, password, status FROM summary WHERE arc_no = (SELECT name FROM dir_tree WHERE node_id = (SELECT parent_id FROM dir_tree WHERE name = '${bash_args[0]//\'/\'\'}'))::BIGINT"
 q2="SELECT arc_no, password, status FROM summary WHERE descr = '${bash_args[0]//\'/\'\'}'"
+work_path="~"
 
 # 检查数据库是否可用
 # Check database connection
@@ -172,27 +164,27 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
                 fi
             fi
         fi
-        arc_no=${record[0]}
-        a_pwd=${record[1]}
+        arc_no="${record[0]}"
+        a_pwd="${record[1]}"
     else
         # 生成新编号和密码
         # Generate new number and password
-        arc_no=$(date +%s)
-        a_pwd=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 43 | head -n 1)
+        arc_no="$(date +%s)"
+        a_pwd="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 43 | head -n 1)"
     fi
 
     # 创建工作目录
     # Create working directories
-    mkdir -p ~/$arc_no
+    mkdir -p "$work_path/$arc_no"
     check_exit_code $? "mkdir" "创建新目录失败！"
-    mkdir -p ~/xml_trees
+    mkdir -p "$work_path/xml_trees"
     check_exit_code $? "mkdir" "创建新目录失败！"
 
     # 保存待打包目录的结构
     # Save directory structure
-    tree --du -saX "${bash_args[0]}" > ~/xml_trees/$arc_no.xml
+    tree --du -saX "${bash_args[0]}" > "$work_path/xml_trees/$arc_no.xml"
     check_exit_code $? "tree" "保存目录结构失败！"
-    s_d_f=($(xmlstarlet sel -t -v /tree/report/size -o ' ' -v /tree/report/directories -o ' ' -v /tree/report/files ~/xml_trees/$arc_no.xml))
+    s_d_f=($(xmlstarlet sel -t -v /tree/report/size -o ' ' -v /tree/report/directories -o ' ' -v /tree/report/files "$work_path/xml_trees/$arc_no.xml"))
     check_exit_code $? "xmlstarlet" "读取xml失败！"
 
     # 存入数据库
@@ -202,8 +194,8 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
     fi
     c_dir="$(pwd)"
     if [ $tree_saved -eq 0 ]; then
-        cd ~/xml_trees/
-        until ~/savetree.py $arc_no; do
+        cd "$work_path/xml_trees/"
+        until "$packer_path/savetree.py" "$arc_no"; do
             for secs in $(seq 59 -1 0); do
                 printf "\rSaving directory tree failed. Retrying in %02d..." "$secs"
                 sleep 1
@@ -216,20 +208,22 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
 
     # 删除临时文件
     # Delete temporary files
-    rm $arc_no.xml
+    rm -f "$arc_no.xml"
+    check_exit_code $? "rm" "删除文件失败！"
 
     # 返回打包起始目录
     # Return to starting directory
     cd "$c_dir"
-    check_exit_code $? "cd into "$c_dir "返回起始目录失败！"
+    check_exit_code $? "cd into $c_dir" "返回起始目录失败！"
 
     # 删除残留的压缩包
     # Delete left-overs
-    rm ~/$arc_no/$arc_no.7z.*
+    rm -f "$work_path/$arc_no/$arc_no.7z.*"
+    check_exit_code $? "rm" "删除文件失败！"
 
     # 打包
     # Pack
-    7z a -t7z -v500m -m0=lzma2 -mx=9 -mmt=on -mhe=on -p$a_pwd ~/$arc_no/$arc_no.7z "${bash_args[0]}"
+    7z a -t7z -mx=0 -ms=off -mhe=on -m0=copy -v500m -p'$a_pwd' "$work_path/$arc_no/$arc_no.7z" "${bash_args[0]}"
     check_exit_code $? "7z add" "打包失败！"
 
     # 设置步骤标志
@@ -246,14 +240,14 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-test" ]; th
         if [ -z "${record[0]}" ] || [ -z "${record[1]}" ]; then
             db_query "SELECT" "$q1"
         fi
-        arc_no=${record[0]}
-        a_pwd=${record[1]}
+        arc_no="${record[0]}"
+        a_pwd="${record[1]}"
     fi
 
     # 进入存档目录
     # Switch to archive directory
-    cd ~/$arc_no/
-    check_exit_code $? "cd into "$arc_no "进入存档目录失败！"
+    cd "$work_path/$arc_no/"
+    check_exit_code $? "cd into $arc_no" "进入存档目录失败！"
 
     # 计算分卷数和总大小
     # Calculate total volume and total size
@@ -265,7 +259,7 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-test" ]; th
 
     # 测试
     # Test
-    7z t $arc_no.7z.001 -p$a_pwd
+    7z t "$arc_no.7z.001" -p'$a_pwd'
     check_exit_code $? "7z test" "测试失败！"
 
     # 设置步骤标志
@@ -282,10 +276,11 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-par2" ]; th
         if [ -z "${record[0]}" ]; then
             db_query "SELECT" "$q1"
         fi
-        arc_no=${record[0]}
-        # 进入存档目录 Switch to archive directory
-        cd ~/$arc_no/
-        check_exit_code $? "cd into "$arc_no "进入存档目录失败！"
+        arc_no="${record[0]}"
+        # 进入存档目录
+        # Switch to archive directory
+        cd "$work_path/$arc_no/"
+        check_exit_code $? "cd into $arc_no" "进入存档目录失败！"
     fi
 
     # 更新数据库
@@ -294,11 +289,12 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-par2" ]; th
 
     # 删除残留的par2
     # Delete previous pars
-    rm $arc_no.7z.par2 $arc_no.7z.vol*
+    rm -f "$arc_no.7z.par2" "$arc_no.7z.vol*"
+    check_exit_code $? "rm" "删除文件失败！"
 
     # 生成par2
     # Generate par2
-    par2 c -s16777216 -r5 -l $arc_no.7z *
+    par2 c -s16777216 -r5 -l "$arc_no.7z" *
     check_exit_code $? "par2" "生成修复文件失败！"
 
     # 设置步骤标志
@@ -315,7 +311,7 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-upload" ]; 
         if [ -z "${record[0]}" ]; then
             db_query "SELECT" "$q1"
         fi
-        arc_no=${record[0]}
+        arc_no="${record[0]}"
     fi
 
     # 更新数据库
@@ -324,11 +320,10 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-upload" ]; 
 
     # 上传至ACD
     # Upload to ACD
-    cd ~
     failures=0
-    until acdcli sync && acdcli ul -x3 $arc_no /Archives; do
+    until acdcli sync && acdcli ul -x 2 "$work_path/$arc_no" /Archives; do
         for secs in $(seq 89 -1 0); do
-             printf "\rUploading failed. Retrying in %02d..." "$secs"
+            printf "\rUploading failed. Retrying in %02d..." "$secs"
             sleep 1
         done
         if [ $((++failures)) -eq 5 ]; then
@@ -338,7 +333,8 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-upload" ]; 
 
     # 删除压缩包
     # Delete local archives
-    rm -r $arc_no
+    rm -rf "$arc_no"
+    check_exit_code $? "rm" "删除文件失败！"
 
     # 更新数据库
     # Update database

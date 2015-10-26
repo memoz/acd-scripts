@@ -29,7 +29,7 @@ args = parser.parse_args()
 # 开始执行的时刻
 # Take start time
 start_time = datetime.now(timezone(timedelta(hours=8))).replace(microsecond=0).isoformat(' ')
-sys.stdout.write('Start saving directory tree at '+start_time+'.\n')
+sys.stdout.write(start_time+' Start saving directory tree...\n')
 
 # 连接至数据库
 # Connect to database
@@ -83,6 +83,6 @@ for element in root.iter():
 # Commit changes and close connection
 conn.commit()
 finish_time = datetime.now(timezone(timedelta(hours=8))).replace(microsecond=0).isoformat(' ')
-sys.stdout.write('Directory tree saved at '+finish_time+'.\n')
+sys.stdout.write(finish_time+' Directory tree saved.\n')
 cur.close()
 conn.close()
