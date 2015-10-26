@@ -80,23 +80,27 @@ hostssl    all             all             ::1/128              cert    clientce
 #### 启用审计（可选）
 此功能可记录SQL操作，详细信息[见此](https://wiki.postgresql.org/wiki/Audit_trigger_91plus)，使用步骤为：
 
- - 下载[audit.sql](https://raw.githubusercontent.com/2ndQuadrant/audit-trigger/master/audit.sql)。
- - 此功能需要hstore数据类型，安装PostgreSQL附加模块：
-```
-sudo aptitude install postgresql-contrib
-```
- - 以postgres身份在目标数据库（此处为acd）中执行脚本：
-```
-psql -f audit.sql acd
-```
- - 对指定数据表启用审计：
-```
-SELECT audit.audit_table('数据表名');
-```
- - 查询记录：
-```
-SELECT * FROM audit.logged_actions;
-```
+1. 下载[audit.sql](https://raw.githubusercontent.com/2ndQuadrant/audit-trigger/master/audit.sql)。
+2. 此功能需要hstore数据类型，安装PostgreSQL附加模块：
+
+   ```
+   sudo aptitude install postgresql-contrib
+   ```
+3. 以postgres身份在目标数据库（此处为acd）中执行脚本：
+
+   ```
+   psql -f audit.sql acd
+   ```
+4. 对指定数据表启用审计：
+
+   ```
+   SELECT audit.audit_table('数据表名');
+   ```
+5. 查询记录：
+
+   ```
+   SELECT * FROM audit.logged_actions;
+   ```
 
 ### 设置脚本运行环境
 #### 安装必须的软件
@@ -150,24 +154,26 @@ ssh -N -o "ProxyCommand ssh -W %h:%p user@thirdhost" -R 5432:127.0.0.1:5432 user
 ```
 
 ##### 断线自动重连
- - 使用autossh：参数-f为后台运行；-M为autossh连接监测端口；-N为不执行远程命令，仅建立隧道；环境变量AUTOSSH_POLL为监测数据包发送间隔，单位秒。
+1. 使用autossh：参数-f为后台运行；-M为autossh连接监测端口；-N为不执行远程命令，仅建立隧道；环境变量AUTOSSH_POLL为监测数据包发送间隔，单位秒。
 
-```
-AUTOSSH_POLL=30 autossh -M 12340 -f -N -o "ProxyCommand ssh -W %h:%p user@thirdhost" -L 5432:127.0.0.1:5432 user@server
-```
+   ```
+   AUTOSSH_POLL=30 autossh -M 12340 -f -N -o "ProxyCommand ssh -W %h:%p user@thirdhost" -L 5432:127.0.0.1:5432 user@server
+   ```
 
- - 在服务器设置ClientAliveInterval和ClientAliveCountMax
+2. 在服务器设置ClientAliveInterval和ClientAliveCountMax
 
- - 在客户端设置ServerAliveInterval和ServerAliveCountMax
+3. 在客户端设置ServerAliveInterval和ServerAliveCountMax
 
 ### 修改脚本参数
 #### 电子邮件
-请根据自己的情况，修改packer.sh开始处的send_email函数。分为邮件主题、SMTP服务器登陆信息和接收邮箱。
+请根据自己的情况，修改send_email.sh。分为邮件主题、SMTP服务器登陆信息和接收邮箱。
 #### savetree.py的时区
 此项默认为hours=8，即UTC+8，改为当地偏移量即可。
+#### 指定工作目录
+在packer.sh第103行的work_path="~"，将"~"改为所需路径即可，末尾不需要加正斜杠。
 
 ## 平常使用
-将packer.sh和savetree.py放到要保存的文件夹之外，如home。确保home所在分区有足够空间存放压缩包和修复文件。
+将所有sh文件和savetree.py放到要保存的文件夹之外，如home。确保工作目录所在分区有足够空间存放压缩包和修复文件。
 ### 正常上传
 ```
 packer.sh 文件夹名
