@@ -170,7 +170,7 @@ ssh -N -o "ProxyCommand ssh -W %h:%p user@thirdhost" -R 5432:127.0.0.1:5432 user
 #### savetree.py的时区
 此项默认为hours=8，即UTC+8，改为当地偏移量即可。
 #### 指定工作目录
-在packer.sh第103行的work_path="~"，将"~"改为所需路径即可，末尾不需要加正斜杠。
+packer.sh第103行的work_path="$HOME"，将"$HOME"改为所需路径即可，末尾不需要加正斜杠。
 
 ## 平常使用
 将所有sh文件和savetree.py放到要保存的文件夹之外，如home。确保工作目录所在分区有足够空间存放压缩包和修复文件。
