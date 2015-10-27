@@ -208,7 +208,7 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
 
     # 删除临时文件
     # Delete temporary files
-    rm -f "$arc_no.xml"
+    rm -f "$work_path/$arc_no.xml"
     check_exit_code $? "rm" "删除文件失败！"
 
     # 返回打包起始目录
