@@ -100,7 +100,7 @@ tree_saved=0
 record_exist=0
 q1="SELECT arc_no, password, status FROM summary WHERE arc_no = (SELECT name FROM dir_tree WHERE node_id = (SELECT parent_id FROM dir_tree WHERE name = '${bash_args[0]//\'/\'\'}'))::BIGINT"
 q2="SELECT arc_no, password, status FROM summary WHERE descr = '${bash_args[0]//\'/\'\'}'"
-work_path="$HOME"
+work_path="/vol/sdb1/packer"
 
 # 检查数据库是否可用
 # Check database connection
@@ -208,7 +208,7 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
 
     # 删除临时文件
     # Delete temporary files
-    rm -f "$work_path/$arc_no.xml"
+    rm -f "$work_path/xml_trees/$arc_no.xml"
     check_exit_code $? "rm" "删除文件失败！"
 
     # 返回打包起始目录
@@ -223,7 +223,7 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
 
     # 打包
     # Pack
-    7z a -t7z -mx=0 -ms=off -mhe=on -m0=copy -v500m -p'$a_pwd' "$work_path/$arc_no/$arc_no.7z" "${bash_args[0]}"
+    7z a -t7z -mx=0 -ms=off -mhe=on -m0=copy -v500m -p"$a_pwd" "$work_path/$arc_no/$arc_no.7z" "${bash_args[0]}"
     check_exit_code $? "7z add" "打包失败！"
 
     # 设置步骤标志
@@ -259,7 +259,7 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-test" ]; th
 
     # 测试
     # Test
-    7z t "$arc_no.7z.001" -p'$a_pwd'
+    7z t "$arc_no.7z.001" -p"$a_pwd"
     check_exit_code $? "7z test" "测试失败！"
 
     # 设置步骤标志
@@ -321,7 +321,7 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-upload" ]; 
     # 上传至ACD
     # Upload to ACD
     failures=0
-    until acdcli sync && acdcli ul -x 2 "$work_path/$arc_no" /Archives; do
+    until acdcli sync && acdcli ul -x 5 "$work_path/$arc_no" /Archives; do
         for secs in $(seq 89 -1 0); do
             printf "\rUploading failed. Retrying in %02d..." "$secs"
             sleep 1
