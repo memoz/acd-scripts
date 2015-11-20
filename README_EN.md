@@ -63,6 +63,7 @@ psql -f db-init.sql
 
 #### Modify configuration files
 Specify server cert and root cert
+
 /etc/postgresql/9.4/main/postgresql.conf
 ```
 ssl_cert_file = '/etc/postgresql-common/server.crt'
@@ -70,6 +71,7 @@ ssl_key_file = '/etc/postgresql-common/server.key'
 ssl_ca_file = '/etc/postgresql-common/root.pem'
 ```
 Force SSL on TCP connections
+
 /etc/postgresql/9.4/main/pg_hba.conf
 ```
 # IPv4 local connections:
@@ -109,12 +111,16 @@ sudo aptitude install tree p7zip-full par2 mailx xmlstarlet tidy postgresql-clie
 sudo pip3 install --upgrade git+https://github.com/yadayada/acd_cli.git
 ```
 #### Place client certificates
+
 /etc/postgresql-common/postgresql.crt
+
 /etc/postgresql-common/postgresql.key
+
 /etc/postgresql-common/root.pem
 
 #### Set up client connection service file
 So we can simply pass a "name" to psql.
+
 /etc/postgresql-common/pg_service.conf
 ```
 [dsn1]
