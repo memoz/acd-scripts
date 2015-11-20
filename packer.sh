@@ -183,12 +183,9 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
     tree --du -saX "${bash_args[0]}" > "$work_path/xml_trees/$arc_no.xml"
     check_exit_code $? "tree" "保存目录结构失败！"
     tidy -miq -xml -utf8 -f "$work_path/xml_trees/tidy_$arc_no.log" "$work_path/xml_trees/$arc_no.xml"
-    if [ $? -eq 1 ]; then
-        echo "Fixed invalid xml!"
+    if [ $? -gt 1 ]; then
+        echo "Unable to fix invalid xml!"
         send_email "$work_path/xml_trees/tidy_$arc_no.log"
-    elif [ $? -ne 0 ]; then
-        echo "Unable to fix invalid xml. Abort!"
-        send_email "无法修复无效的xml文件！"
         exit 1
     fi
     s_d_f=($(xmlstarlet sel -t -v /tree/report/size -o ' ' -v /tree/report/directories -o ' ' -v /tree/report/files "$work_path/xml_trees/$arc_no.xml"))

@@ -18,7 +18,6 @@
 # 发送通知邮件
 # Send notification emails
 function send_email () {
-    echo -e "\n------Sending email:------\n"
     if [ -f "$1" ]; then
         cat "$1"
         mailx \
@@ -31,8 +30,7 @@ function send_email () {
         -S ssl-verify=ignore \
         user@example.com < "$1"
     else
-        echo "$1"
-        mailx \
+        echo "$1" | mailx \
         -s "subject" \
         -S smtp="smtp.gmail.com:587" \
         -S smtp-use-starttls \
@@ -40,11 +38,10 @@ function send_email () {
         -S smtp-auth-user="user@example.com" \
         -S smtp-auth-password="password" \
         -S ssl-verify=ignore \
-        user@example.com "$1"
+        user@example.com
     fi
     if [ $? -ne 0 ]; then
         echo -e "FAILED to send email!"
         exit 1
     fi
-    echo -e "\n--------Email sent--------\n"
 }
