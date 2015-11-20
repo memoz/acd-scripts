@@ -64,6 +64,7 @@ psql -f db-init.sql
 
 #### 修改配置文件
 指定服务器证书和根证书
+
 /etc/postgresql/9.4/main/postgresql.conf
 ```
 ssl_cert_file = '/etc/postgresql-common/server.crt'
@@ -71,6 +72,7 @@ ssl_key_file = '/etc/postgresql-common/server.key'
 ssl_ca_file = '/etc/postgresql-common/root.pem'
 ```
 强制TCP连接使用SSL
+
 /etc/postgresql/9.4/main/pg_hba.conf
 ```
 # IPv4 local connections:
@@ -110,11 +112,15 @@ sudo aptitude install tree p7zip-full par2 mailx xmlstarlet tidy postgresql-clie
 sudo pip3 install --upgrade git+https://github.com/yadayada/acd_cli.git
 ```
 #### 放置证书
+
 /etc/postgresql-common/postgresql.crt
+
 /etc/postgresql-common/postgresql.key
+
 /etc/postgresql-common/root.pem
 
 #### 设置连接服务文件
+
 /etc/postgresql-common/pg_service.conf
 ```
 [dsn1]
