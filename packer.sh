@@ -59,10 +59,6 @@ fi
 # Copy input arguments
 bash_args=("$@")
 
-# 删除目录名中的正斜杠
-# Remove forward slashes in the directory name
-bash_args[0]="${bash_args[0]%/}"
-
 # 获取脚本路径
 # Obtain script location
 packer_path="${BASH_SOURCE%/*}"
@@ -89,6 +85,8 @@ command -v mailx
 check_exit_code $? "Check mailx"
 command -v xmlstarlet
 check_exit_code $? "Check xmlstarlet"
+command -v tidy
+check_exit_code $? "Check tidy"
 command -v psql
 check_exit_code $? "Check psql"
 
@@ -100,7 +98,7 @@ tree_saved=0
 record_exist=0
 q1="SELECT arc_no, password, status FROM summary WHERE arc_no = (SELECT name FROM dir_tree WHERE node_id = (SELECT parent_id FROM dir_tree WHERE name = '${bash_args[0]//\'/\'\'}'))::BIGINT"
 q2="SELECT arc_no, password, status FROM summary WHERE descr = '${bash_args[0]//\'/\'\'}'"
-work_path="/vol/sdb1/packer"
+work_path="$HOME"
 
 # 检查数据库是否可用
 # Check database connection
@@ -184,6 +182,15 @@ if [ -z "${bash_args[1]}" ] || [ "${bash_args[1]}" == "skip-db-check" ] || [ "${
     # Save directory structure
     tree --du -saX "${bash_args[0]}" > "$work_path/xml_trees/$arc_no.xml"
     check_exit_code $? "tree" "保存目录结构失败！"
+    tidy -miq -xml -utf8 -f "$work_path/xml_trees/tidy_$arc_no.log" "$work_path/xml_trees/$arc_no.xml"
+    if [ $? -eq 1 ]; then
+        echo "Fixed invalid xml!"
+        send_email "$work_path/xml_trees/tidy_$arc_no.log"
+    elif [ $? -ne 0 ]; then
+        echo "Unable to fix invalid xml. Abort!"
+        send_email "无法修复无效的xml文件！"
+        exit 1
+    fi
     s_d_f=($(xmlstarlet sel -t -v /tree/report/size -o ' ' -v /tree/report/directories -o ' ' -v /tree/report/files "$work_path/xml_trees/$arc_no.xml"))
     check_exit_code $? "xmlstarlet" "读取xml失败！"
 
@@ -321,7 +328,7 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-upload" ]; 
     # 上传至ACD
     # Upload to ACD
     failures=0
-    until acdcli sync && acdcli ul -x 5 "$work_path/$arc_no" /Archives; do
+    until acdcli sync && acdcli ul -x 2 "$work_path/$arc_no" /Archives; do
         for secs in $(seq 89 -1 0); do
             printf "\rUploading failed. Retrying in %02d..." "$secs"
             sleep 1
@@ -333,6 +340,7 @@ if [ "$prior_steps" -gt 0 ] || [ "${bash_args[1]}" == "continue-from-upload" ]; 
 
     # 删除压缩包
     # Delete local archives
+    cd "$work_path"
     rm -rf "$work_path/$arc_no"
     check_exit_code $? "rm" "删除文件失败！"
 

@@ -17,13 +17,14 @@ db-init.sql | PostgreSQL | 创建索引数据库
 # 依赖关系
 除了必备的GNU Core Utils之外还需要：
 
-      软件     |    用途
+     软件      |    用途
 -------------- | ------------
 tree           | 列出目录树
 p7zip          | 压缩和加密
 par2           | 生成修复文件
 heirloom-mailx | 发送电子邮件
 xmlstarlet     | 解析xml文件
+tidy           | 检查和修复无效的xml文件
 psql           | 访问数据库
 acd_cli        | 上传至ACD
 [acd_cli](https://github.com/yadayada/acd_cli)为另一Github项目，其余为自由软件。
@@ -63,15 +64,15 @@ psql -f db-init.sql
 
 #### 修改配置文件
 指定服务器证书和根证书
-```
 /etc/postgresql/9.4/main/postgresql.conf
+```
 ssl_cert_file = '/etc/postgresql-common/server.crt'
 ssl_key_file = '/etc/postgresql-common/server.key'
 ssl_ca_file = '/etc/postgresql-common/root.pem'
 ```
 强制TCP连接使用SSL
-```
 /etc/postgresql/9.4/main/pg_hba.conf
+```
 # IPv4 local connections:
 hostssl    all             all             127.0.0.1/32         cert    clientcert=1
 # IPv6 local connections:
@@ -105,18 +106,17 @@ hostssl    all             all             ::1/128              cert    clientce
 ### 设置脚本运行环境
 #### 安装必须的软件
 ```
-sudo aptitude install tree p7zip-full par2 mailx xmlstarlet postgresql-client python3 python3-lxml python3-pip
+sudo aptitude install tree p7zip-full par2 mailx xmlstarlet tidy postgresql-client python3 python3-lxml python3-pip
 sudo pip3 install --upgrade git+https://github.com/yadayada/acd_cli.git
 ```
 #### 放置证书
-```
 /etc/postgresql-common/postgresql.crt
 /etc/postgresql-common/postgresql.key
 /etc/postgresql-common/root.pem
-```
+
 #### 设置连接服务文件
-```
 /etc/postgresql-common/pg_service.conf
+```
 [dsn1]
 dbname=acd
 user=packer
@@ -197,6 +197,9 @@ packer.sh 文件夹名 auto-recover
 packer.sh 文件夹名 skip-db-check
 packer.sh 文件夹名 auto-recover skip-db-check
 ```
+
+### 批量打包
+batch.sh 会将当前文件夹下的所有一级子文件夹分别打包。
 
 ### 查询数据库
 这里需要一个用户界面，暂时用psql代替。

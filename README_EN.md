@@ -23,6 +23,7 @@ p7zip          | Compression and encryption
 par2           | Generate recovery files
 heirloom-mailx | Send emails
 xmlstarlet     | Parse xml files
+tidy           | Check and correct invalid xml files
 psql           | Access database
 acd_cli        | Uplaod to ACD
 [acd_cli](https://github.com/yadayada/acd_cli) is another Github project, others are free softwares。
@@ -62,15 +63,15 @@ psql -f db-init.sql
 
 #### Modify configuration files
 Specify server cert and root cert
-```
 /etc/postgresql/9.4/main/postgresql.conf
+```
 ssl_cert_file = '/etc/postgresql-common/server.crt'
 ssl_key_file = '/etc/postgresql-common/server.key'
 ssl_ca_file = '/etc/postgresql-common/root.pem'
 ```
 Force SSL on TCP connections
-```
 /etc/postgresql/9.4/main/pg_hba.conf
+```
 # IPv4 local connections:
 hostssl    all             all             127.0.0.1/32         cert    clientcert=1
 # IPv6 local connections:
@@ -104,19 +105,18 @@ This feature keeps a log of certain SQL transactions. See [here](https://wiki.po
 ### Set up scripts' environment
 #### Install required softwares
 ```
-sudo aptitude install tree p7zip-full par2 mailx xmlstarlet postgresql-client python3 python3-lxml python3-pip
+sudo aptitude install tree p7zip-full par2 mailx xmlstarlet tidy postgresql-client python3 python3-lxml python3-pip
 sudo pip3 install --upgrade git+https://github.com/yadayada/acd_cli.git
 ```
 #### Place client certificates
-```
 /etc/postgresql-common/postgresql.crt
 /etc/postgresql-common/postgresql.key
 /etc/postgresql-common/root.pem
-```
+
 #### Set up client connection service file
 So we can simply pass a "name" to psql.
-```
 /etc/postgresql-common/pg_service.conf
+```
 [dsn1]
 dbname=acd
 user=packer
@@ -197,6 +197,9 @@ This option is aimed at batch processing(by invoking this script), so temporary 
 packer.sh directory_name skip-db-check
 packer.sh directory_name auto-recover skip-db-check
 ```
+
+### Packing multiple directories
+batch.sh packs all immediate subdirectories in the current directory individually.
 
 ### Querying the database
 This should be a separate feature, but we'll use psql for now. 
